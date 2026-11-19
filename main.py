@@ -101,13 +101,16 @@ class Game:
         self.bullets.update()
         self.enemies.update()
 
-        # TODO(F3): 총알과 적이 부딪히면 둘 다 없애고, 맞힌 적 하나당 SCORE_PER_ENEMY 점을 더할 것.
-        #           힌트: pygame.sprite.groupcollide
+        kill_enemies_dict = pygame.sprite.groupcollide(self.bullets, self.enemies, True, True)
+        kill_enemies_set = set()
+        for i in kill_enemies_dict.values():
+            kill_enemies_set.update(i)
+
+        self.score= self.score+len(kill_enemies_set)*SCORE_PER_ENEMY
 
         collided_enemies = pygame.sprite.spritecollide(self.player, self.enemies, True)
         self.lives -= len(collided_enemies)
 
-        # 화면 아래로 지나간 적은 없앨 것.
         for enemy in list(self.enemies):
             if enemy.rect.top > HEIGHT:
                 enemy.kill()
