@@ -120,9 +120,10 @@ class Game:
             self.end_game()
 
     def end_game(self):
-        """게임 오버 처리."""
         self.game_over = True
-        # TODO(F5): 이번 점수가 최고 점수보다 높으면 self.high_score 를 바꾸고 save_high_score() 로 저장할 것.
+        if self.score > self.high_score:
+            self.high_score = self.score
+            save_high_score(self.high_score)
 
     # ---------------- 그리기 ----------------
     def draw_text(self, text, font, color, **position):
@@ -155,15 +156,16 @@ class Game:
         controls = ("LEFT / RIGHT : Move", "SPACE : Shoot", "R : Restart", "ESC : Quit")
         for i, line in enumerate(controls):
             self.draw_text(line, self.font, WHITE, center=(cx, 370 + i * 34))
-        if pygame.time.get_ticks() // 500 % 2 == 0:  # 0.5초마다 깜빡임
+        if pygame.time.get_ticks() // 500 % 2 == 0:
             self.draw_text("Press SPACE to start", self.font, YELLOW, center=(cx, 540))
 
     def draw_game_over(self):
         cx = WIDTH // 2
         self.draw_text("GAME OVER", self.big_font, YELLOW, center=(cx, 150))
         self.draw_text(f"SCORE: {self.score}", self.font, WHITE, center=(cx, 350))
-        # TODO(F5): 최고 점수("HIGH SCORE: 300")와 재시작 안내("Press R to restart")도 표시할 것.
-        pass
+        self.draw_text(f"HIGH SCORE: {self.high_score}", self.font, WHITE, center=(cx, 400))
+        if pygame.time.get_ticks() // 500 % 2 == 0:
+            self.draw_text("Press R to restart", self.font, YELLOW, center=(cx, 540))
 
     # ---------------- 게임 루프 ----------------
     def step(self):
