@@ -10,20 +10,20 @@ from settings import (
 )
 from entities import Background, Player, Enemy
 
-SPAWN_ENEMY = pygame.USEREVENT + 1  # "적을 하나 만들 때가 됐다"는 타이머 이벤트
+SPAWN_ENEMY = pygame.USEREVENT + 1
 
 
 def load_high_score():
-    """HIGHSCORE_FILE 에서 최고 점수를 읽어 돌려준다."""
-    # TODO(F5): 파일에서 최고 점수를 읽어 int 로 반환할 것.
-    #           파일이 없거나 내용이 숫자가 아니면 0 을 반환할 것.
-    return 0
+    try:
+        with open(HIGHSCORE_FILE, "r") as file:
+            return int(file.read().strip())
+    except (FileNotFoundError, ValueError):
+        return 0
 
 
 def save_high_score(score):
-    """최고 점수를 HIGHSCORE_FILE 에 저장한다."""
-    # TODO(F5): score 를 파일에 저장할 것. (다음 실행 때 load_high_score() 로 읽을 수 있게)
-    pass
+    with open(HIGHSCORE_FILE, "w") as file:
+        file.write(str(score))
 
 
 class Game:
@@ -36,19 +36,17 @@ class Game:
         self.big_font = pygame.font.Font(None, 72)
         pygame.time.set_timer(SPAWN_ENEMY, ENEMY_SPAWN_MS)
         self.background = Background()
-        # 밝은 배경 위에서도 글자가 보이도록 깔아 줄 반투명 어두운 막
         self.hud_shade = pygame.Surface((WIDTH, 44), pygame.SRCALPHA)
         self.hud_shade.fill(HUD_SHADE)
-        self.dark_shade = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)  # 시작·게임 오버 화면용
+        self.dark_shade = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         self.dark_shade.fill(GAME_OVER_SHADE)
         self.high_score = load_high_score()
         self.running = True
-        self.on_title = True  # True 면 시작 화면, SPACE 를 누르면 False 가 되며 게임 시작
+        self.on_title = True
         self.reset()
 
     def reset(self):
-        """새 판을 시작한다. 스프라이트·점수·생명을 처음 상태로 되돌린다."""
-        self.all_sprites = pygame.sprite.Group()  # 화면에 그릴 모든 스프라이트
+        self.all_sprites = pygame.sprite.Group()
         self.bullets = pygame.sprite.Group()
         self.enemies = pygame.sprite.Group()
         self.player = Player()
@@ -63,7 +61,7 @@ class Game:
             if event.type == pygame.QUIT:
                 self.running = False
             elif self.on_title:
-                self.handle_title_event(event)  # 시작 화면 입력은 여기서만 처리
+                self.handle_title_event(event)
             elif event.type == SPAWN_ENEMY and not self.game_over:
                 enemy = Enemy()
                 self.enemies.add(enemy)
@@ -77,10 +75,11 @@ class Game:
                     bullet = self.player.shoot()
                     self.bullets.add(bullet)
                     self.all_sprites.add(bullet)
-                # TODO(F5): 게임 오버 상태에서 R 키를 누르면 self.reset() 으로 새 판을 시작할 것.
+
+                elif event.key == pygame.K_r and self.game_over:
+                    self.reset()
 
     def handle_title_event(self, event):
-        """시작 화면의 입력: SPACE 면 새 판 시작, ESC 면 종료. (적 생성·발사 없음)"""
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_SPACE:
                 self.on_title = False
@@ -91,11 +90,11 @@ class Game:
     # ---------------- 갱신 ----------------
     def update(self):
         if self.game_over:
-            return  # 게임 오버면 화면(배경 포함)을 멈춤.
+            return
 
         self.background.update()
         if self.on_title:
-            return  # 시작 화면에서는 배경만 흐름.
+            return
 
         self.player.update(pygame.key.get_pressed())
         self.bullets.update()
@@ -127,7 +126,6 @@ class Game:
 
     # ---------------- 그리기 ----------------
     def draw_text(self, text, font, color, **position):
-        """글자를 화면에 그린다. 예: self.draw_text("Hi", self.font, WHITE, center=(240, 320))"""
         surface = font.render(text, True, color)
         self.screen.blit(surface, surface.get_rect(**position))
 
@@ -139,8 +137,8 @@ class Game:
             return
         self.all_sprites.draw(self.screen)
         if self.game_over:
-            self.screen.blit(self.dark_shade, (0, 0))  # 게임 오버 글자가 잘 보이게
-        self.screen.blit(self.hud_shade, (0, 0))  # 점수·생명 글자 뒤 어두운 띠
+            self.screen.blit(self.dark_shade, (0, 0))
+        self.screen.blit(self.hud_shade, (0, 0))
         self.draw_text(f"LIVES: {self.lives}", self.font, WHITE, topright=(WIDTH - 10, 10))
         self.draw_text(f"SCORE: {self.score}", self.font, WHITE, topleft=(10, 10))
         if self.game_over:
@@ -148,7 +146,6 @@ class Game:
         pygame.display.flip()
 
     def draw_title(self):
-        """시작 화면: 게임 이름, 플레이어 그림, 조작 안내, 깜빡이는 시작 안내."""
         cx = WIDTH // 2
         self.screen.blit(self.dark_shade, (0, 0))
         self.draw_text(TITLE, self.big_font, YELLOW, center=(cx, 150))
@@ -169,7 +166,6 @@ class Game:
 
     # ---------------- 게임 루프 ----------------
     def step(self):
-        """한 프레임: 입력 → 갱신 → 그리기."""
         self.handle_events()
         self.update()
         self.draw()
@@ -179,7 +175,6 @@ class Game:
             self.clock.tick(FPS)
             self.step()
         pygame.quit()
-
 
 if __name__ == "__main__":
     Game().run()
